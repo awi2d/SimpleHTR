@@ -83,6 +83,11 @@ class Preprocessor:
                 target[y:y + curr_sel_img.shape[0]:, x:x + curr_sel_img.shape[1]] = curr_sel_img
                 x += curr_sel_img.shape[1]
 
+            #cv2.imshow("word line", target)
+            #print("gold label text: ", curr_gt)
+            #cv2.waitKey(0)
+            #exit(0)
+
             # put image of line into result
             res_imgs.append(target)
 

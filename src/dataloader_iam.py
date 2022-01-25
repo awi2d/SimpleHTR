@@ -63,7 +63,7 @@ class DataLoaderIAM:
             chars = chars.union(set(list(gt_text)))
 
             # put sample into list
-            self.samples.append(Sample(gt_text, file_name))
+            self.samples.append(Sample(gt_text, file_name))  # gt_text = word that is shown in file_name, e.g Sample("gave" ,  "../trainingDataset\img\n04\n04-000\n04-000-01-05.png")
 
         # split into training and validation set: 95% - 5%
         split_idx = int(data_split * len(self.samples))

@@ -13,8 +13,9 @@ from preprocessor import Preprocessor
 
 class FilePaths:
     """Filenames and paths to data."""
-    fn_char_list = '../model/charList.txt'
-    fn_summary = '../model/summary.json'
+    model_path = '../model/line'
+    fn_char_list = model_path+'/charList.txt'
+    fn_summary = model_path+'/summary.json'
     fn_corpus = '../data/corpus.txt'
 
 
@@ -137,13 +138,13 @@ def main():
     """Main function."""
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--mode', choices=['train', 'validate', 'infer'], default='infer')
-    parser.add_argument('--decoder', choices=['bestpath', 'beamsearch', 'wordbeamsearch'], default='bestpath')
+    parser.add_argument('--mode', choices=['train', 'validate', 'infer'], default='train')
+    parser.add_argument('--decoder', choices=['bestpath', 'beamsearch', 'wordbeamsearch'], default='wordbeamsearch')
     parser.add_argument('--batch_size', help='Batch size.', type=int, default=100)
-    parser.add_argument('--data_dir', help='Directory containing IAM dataset.', type=Path, required=False)
+    parser.add_argument('--data_dir', help='Directory containing IAM dataset.', type=Path, required=False, default='../trainingDataset')
     parser.add_argument('--fast', help='Load samples from LMDB.', action='store_true')
-    parser.add_argument('--line_mode', help='Train to read text lines instead of single words.', action='store_true')
-    parser.add_argument('--img_file', help='Image used for inference.', type=Path, default='../data/word.png')
+    parser.add_argument('--line_mode', help='Train to read text lines instead of single words.', action='store_true', default=True)
+    parser.add_argument('--img_file', help='Image used for inference.', type=Path, default='../data/line.png')
     parser.add_argument('--early_stopping', help='Early stopping epochs.', type=int, default=25)
     parser.add_argument('--dump', help='Dump output of NN to CSV file(s).', action='store_true')
     args = parser.parse_args()
@@ -157,6 +158,7 @@ def main():
     # train or validate on IAM dataset
     if args.mode in ['train', 'validate']:
         # load training data, create TF model
+        print("train or validate")
         loader = DataLoaderIAM(args.data_dir, args.batch_size, fast=args.fast)
         char_list = loader.char_list
 
@@ -172,17 +174,25 @@ def main():
 
         # execute training or validation
         if args.mode == 'train':
-            model = Model(char_list, decoder_type)
+            model = Model(char_list, decoder_type, model_dir=FilePaths.model_path)
             train(model, loader, line_mode=args.line_mode, early_stopping=args.early_stopping)
         elif args.mode == 'validate':
-            model = Model(char_list, decoder_type, must_restore=True)
+            model = Model(char_list, decoder_type, must_restore=True, model_dir=FilePaths.model_path)
             validate(model, loader, args.line_mode)
 
     # infer text on test image
     elif args.mode == 'infer':
-        model = Model(list(open(FilePaths.fn_char_list).read()), decoder_type, must_restore=True, dump=args.dump)
+        print("infer")
+        print("file: ", FilePaths.fn_char_list)
+        model = Model(list(open(FilePaths.fn_char_list).read()), decoder_type, must_restore=True, dump=args.dump, model_dir=FilePaths.model_path)
         infer(model, args.img_file)
 
 
 if __name__ == '__main__':
     main()
+
+# model:self word beam search : Character error rate: 8.431590656284762%. Word accuracy: 84.30454387790496%.
+# model:self best path        : Character error rate: 10.914349276974416%. Word accuracy: 73.48248352410684%.
+# model:word best path        : Character error rate: 10.914349276974416%. Word accuracy: 73.48248352410684%.
+
+# https://towardsdatascience.com/build-a-handwritten-text-recognition-system-using-tensorflow-2326a3487cd5

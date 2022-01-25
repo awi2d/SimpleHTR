@@ -8,6 +8,7 @@ import tensorflow as tf
 from dataloader_iam import Batch
 
 # Disable eager mode
+
 tf.compat.v1.disable_eager_execution()
 
 
@@ -25,13 +26,14 @@ class Model:
                  char_list: List[str],
                  decoder_type: str = DecoderType.BestPath,
                  must_restore: bool = False,
-                 dump: bool = False) -> None:
+                 dump: bool = False, model_dir = '../model/word') -> None:
         """Init model: add CNN, RNN and CTC and initialize TF."""
         self.dump = dump
         self.char_list = char_list
         self.decoder_type = decoder_type
         self.must_restore = must_restore
         self.snap_ID = 0
+        self.model_dir = model_dir
 
         # Whether to use normalization over a batch or a population
         self.is_train = tf.compat.v1.placeholder(tf.bool, name='is_train')
@@ -153,12 +155,11 @@ class Model:
         sess = tf.compat.v1.Session()  # TF session
 
         saver = tf.compat.v1.train.Saver(max_to_keep=1)  # saver saves model to file
-        model_dir = '../model/'
-        latest_snapshot = tf.train.latest_checkpoint(model_dir)  # is there a saved model?
+        latest_snapshot = tf.train.latest_checkpoint(self.model_dir)  # is there a saved model?
 
         # if model must be restored (for inference), there must be a snapshot
         if self.must_restore and not latest_snapshot:
-            raise Exception('No saved model found in: ' + model_dir)
+            raise Exception('No saved model found in: ' + self.model_dir)
 
         # load saved model if available
         if latest_snapshot:

@@ -136,34 +136,53 @@ def infer(model: Model, fn_img: Path) -> None:
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--mode', choices=['train', 'validate', 'infer'], default='train')
-    parser.add_argument('--decoder', choices=['bestpath', 'beamsearch', 'wordbeamsearch'], default='bestpath')  # change Settings.python interpreter to wordbeamsearch to use wordbeamsearch.
-    parser.add_argument('--batch_size', help='Batch size.', type=int, default=100)
-    parser.add_argument('--data_dir', help='Directory containing IAM dataset.', type=Path, required=False, default='../data/trainingDataset')
-    parser.add_argument('--fast', help='Load samples from LMDB.', action='store_true')
-    parser.add_argument('--line_mode', help='Train to read text lines instead of single words.', action='store_true', default=True)
-    parser.add_argument('--img_file', help='Image used for inference.', type=Path, default='../data/line.png')
-    parser.add_argument('--early_stopping', help='Early stopping epochs.', type=int, default=25)
-    parser.add_argument('--dump', help='Dump output of NN to CSV file(s).', action='store_true')
-    args = parser.parse_args()
+    #parser = argparse.ArgumentParser()
+#
+    #parser.add_argument('--mode', choices=['train', 'validate', 'infer'], default='train')
+    #parser.add_argument('--decoder', choices=['bestpath', 'beamsearch', 'wordbeamsearch'], default='bestpath')  # change Settings.python interpreter to wordbeamsearch to use wordbeamsearch.
+    #parser.add_argument('--batch_size', help='Batch size.', type=int, default=100)
+    #parser.add_argument('--data_dir', help='Directory containing IAM dataset.', type=Path, required=False, default='../trainingDataset')  # ../data/trainingDataset
+    #parser.add_argument('--fast', help='Load samples from LMDB.', action='store_true', default=False)
+    #parser.add_argument('--line_mode', help='Train to read text lines instead of single words.', action='store_true', default=True)
+    #parser.add_argument('--img_file', help='Image used for inference.', type=Path, default='../data/line.png')
+    #parser.add_argument('--early_stopping', help='Early stopping epochs.', type=int, default=25)
+    #parser.add_argument('--dump', help='Dump output of NN to CSV file(s).', action='store_true')
+    #args = parser.parse_args()
+#
+    #mode = args.mode
+    #decoder = args.decoder
+    #batch_size = args.batch_size
+    #data_dir = args.data_dir
+    #fast = False  # args.fast
+    #line_mode = args.line_mode
+    #img_file = args.img_file
+    #early_stopping = args.early_stopping
+    #dump = args.dump
+    mode = 'train'
+    decoder = 'bestpath'
+    batch_size = 100
+    data_dir = Path('../data/trainingDataset')
+    fast = False
+    line_mode = True
+    img_file = Path('../data/line.png')  # dosnt exit on server
+    early_stopping = 250
+    dump = True
 
     # set chosen CTC decoder
     decoder_mapping = {'bestpath': DecoderType.BestPath,
                        'beamsearch': DecoderType.BeamSearch,
                        'wordbeamsearch': DecoderType.WordBeamSearch}
-    decoder_type = decoder_mapping[args.decoder]
+    decoder_type = decoder_mapping[decoder]
 
     # train or validate on IAM dataset
-    if args.mode in ['train', 'validate']:
+    if mode in ['train', 'validate']:
         # load training data, create TF model
         print("train or validate")
-        loader = DataLoaderIAM(args.data_dir, args.batch_size, fast=args.fast)
+        loader = DataLoaderIAM(data_dir, batch_size, fast=fast)
         char_list = loader.char_list
 
         # when in line mode, take care to have a whitespace in the char list
-        if args.line_mode and ' ' not in char_list:
+        if line_mode and ' ' not in char_list:
             char_list = [' '] + char_list
 
         # save characters of model for inference mode
@@ -173,19 +192,19 @@ def main():
         open(FilePaths.fn_corpus, 'w').write(' '.join(loader.train_words + loader.validation_words))
 
         # execute training or validation
-        if args.mode == 'train':
+        if mode == 'train':
             model = Model(char_list, decoder_type, model_dir=FilePaths.model_path)
-            train(model, loader, line_mode=args.line_mode, early_stopping=args.early_stopping)
-        elif args.mode == 'validate':
+            train(model, loader, line_mode=line_mode, early_stopping=early_stopping)
+        elif mode == 'validate':
             model = Model(char_list, decoder_type, must_restore=True, model_dir=FilePaths.model_path)
-            validate(model, loader, args.line_mode)
+            validate(model, loader, line_mode)
 
     # infer text on test image
-    elif args.mode == 'infer':
+    elif mode == 'infer':
         print("infer")
         print("file: ", FilePaths.fn_char_list)
-        model = Model(list(open(FilePaths.fn_char_list).read()), decoder_type, must_restore=True, dump=args.dump, model_dir=FilePaths.model_path)
-        infer(model, args.img_file)
+        model = Model(list(open(FilePaths.fn_char_list).read()), decoder_type, must_restore=True, dump=dump, model_dir=FilePaths.model_path)
+        infer(model, img_file)
 
 
 if __name__ == '__main__':

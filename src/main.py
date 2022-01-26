@@ -141,7 +141,7 @@ def main():
     parser.add_argument('--mode', choices=['train', 'validate', 'infer'], default='train')
     parser.add_argument('--decoder', choices=['bestpath', 'beamsearch', 'wordbeamsearch'], default='bestpath')  # change Settings.python interpreter to wordbeamsearch to use wordbeamsearch.
     parser.add_argument('--batch_size', help='Batch size.', type=int, default=100)
-    parser.add_argument('--data_dir', help='Directory containing IAM dataset.', type=Path, required=False, default='../trainingDataset')
+    parser.add_argument('--data_dir', help='Directory containing IAM dataset.', type=Path, required=False, default='../data/trainingDataset')
     parser.add_argument('--fast', help='Load samples from LMDB.', action='store_true')
     parser.add_argument('--line_mode', help='Train to read text lines instead of single words.', action='store_true', default=True)
     parser.add_argument('--img_file', help='Image used for inference.', type=Path, default='../data/line.png')
